@@ -3,15 +3,37 @@
 include("conexao.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $nome = $_POST["nome"];
-    $email = $_POST["email"]
+    $nome = trim($_POST["nome"]);
+    $email = trim($_POST["email"]);
 
-    $sql = "INSERT INTO usuarios (nome, email) VALUES ('$nome', '$email')";
-    $res = mysqli_query($conn, $sql);
-    if ($res) {
-        echo "Usuário cadastrado com sucesso!";
-    else
-        echo "Erro ao cadastrar!";
+    $erros = array();
+    
+    if (empty($nome)) {
+        $erros[] = "O nome é obrigatório";
+    }
+    
+    if (empty($email)) {
+        $erros[] = "O email é obrigatório";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $erros[] = "Email inválido";
+    }
+
+    if (empty($erros)) {
+        $stmt = $conn->prepare("INSERT INTO usuarios (nome, email) VALUES (?, ?)");
+        $stmt->bind_param("ss", $nome, $email);
+        $res = $stmt->execute();
+    
+        if ($res) {
+            echo "Usuário cadastrado com sucesso!";
+        } else {
+            echo "Erro ao cadastrar!";
+        }
+        $stmt->close();
+    } else {
+        foreach ($erros as $erro) {
+            echo $erro . "<br>";
+        }
+    }
 }
 
 ?>
